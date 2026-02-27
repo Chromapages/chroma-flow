@@ -10,6 +10,14 @@ export interface Client {
   updated_at: string;
 }
 
+export interface Activity {
+  id: string;
+  client_id: string;
+  type: "note" | "email" | "call" | "meeting" | "deliverable" | "payment" | "other";
+  description: string;
+  created_at: string;
+}
+
 export interface Lead {
   id: string;
   client_id?: string;
