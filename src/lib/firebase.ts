@@ -1,5 +1,6 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
+// @ts-ignore - firebase/firestore types issue
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {

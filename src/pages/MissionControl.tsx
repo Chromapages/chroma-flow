@@ -2,8 +2,8 @@ import { useAgentStatus, useModelSpend } from '../hooks/useAgents';
 import { useCampaigns } from '../hooks/useCampaigns';
 
 function MissionControl() {
-  const { agents, loading: agentsLoading, error } = useAgentStatus(5000);
-  const { dailySpend, loading: spendLoading } = useModelSpend();
+  const { agents, loading: agentsLoading, error, isDemo } = useAgentStatus(5000);
+  const { dailySpend, loading: spendLoading, isDemo: spendIsDemo } = useModelSpend();
   const { campaigns } = useCampaigns();
 
   const activeCampaigns = campaigns.filter(c => c.status === 'active');
@@ -49,6 +49,17 @@ function MissionControl() {
           <button className="btn btn-primary">+ Spawn Agent</button>
         </div>
       </header>
+
+      {/* Demo Mode Banner */}
+      {(isDemo || spendIsDemo) && (
+        <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 flex items-center gap-3">
+          <span className="text-primary">🔧</span>
+          <p className="text-sm text-primary">
+            <span className="font-semibold">Demo Mode:</span> Showing simulated agent data. 
+            Connect Pixel Office for live monitoring.
+          </p>
+        </div>
+      )}
 
       {/* Agent Status Grid */}
       <section>
@@ -154,7 +165,7 @@ function MissionControl() {
                     <td>
                       <span className="badge badge-active">{campaign.status}</span>
                     </td>
-                    <td className="text-text-secondary">{campaign.channel || '—'}</td>
+                    <td className="text-text-secondary">—</td>
                     <td className="text-right mono text-xs">—</td>
                   </tr>
                 ))}

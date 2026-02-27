@@ -1,14 +1,38 @@
 import { useClients } from "../hooks/useClients";
 import { useLeads } from "../hooks/useLeads";
 import { useCampaigns } from "../hooks/useCampaigns";
+import { useContent } from "../hooks/useContent";
 
 function Dashboard() {
   const { clients, loading: clientsLoading } = useClients();
   const { leads, loading: leadsLoading } = useLeads();
   const { campaigns, loading: campaignsLoading } = useCampaigns();
+  const { contents, loading: contentLoading } = useContent();
 
-  const activeCampaigns = campaigns.filter(c => c.status === "active").length;
-  const loading = clientsLoading || leadsLoading || campaignsLoading;
+  const activeCampaigns = campaigns.filter((c) => c.status === "active");
+  const totalBudget = campaigns.reduce<number>((sum, c) => sum + (c.budget || 0), 0);
+  const totalSpent = campaigns.reduce<number>((sum, c) => sum + (c.spent || 0), 0);
+  const totalConversions = campaigns.reduce<number>((sum, c) => sum + (c.conversions || 0), 0);
+  
+  // Lead funnel stages
+  const leadsByStage = {
+    new: leads.filter((l) => l.pipeline_stage === 'New').length,
+    contacted: leads.filter((l) => l.pipeline_stage === 'Contacted').length,
+    qualified: leads.filter((l) => l.pipeline_stage === 'Qualified').length,
+    proposal: leads.filter((l) => l.pipeline_stage === 'Proposal').length,
+    won: leads.filter((l) => l.pipeline_stage === 'Won').length,
+    lost: leads.filter((l) => l.pipeline_stage === 'Lost').length,
+  };
+  
+  // Content by status
+  const contentByStatus = {
+    draft: contents.filter((c) => c.status === 'Draft').length,
+    review: contents.filter((c) => c.status === 'Review').length,
+    approved: contents.filter((c) => c.status === 'Approved').length,
+    published: contents.filter((c) => c.status === 'Published').length,
+  };
+
+  const loading = clientsLoading || leadsLoading || campaignsLoading || contentLoading;
 
   return (
     <div className="space-y-16">
@@ -33,6 +57,7 @@ function Dashboard() {
         </div>
       ) : (
         <section>
+          {/* Key Metrics Row */}
           <div className="stats-grid">
             <div className="stat-card">
               <h3 className="stat-label">Total Clients</h3>
@@ -44,15 +69,87 @@ function Dashboard() {
             </div>
             <div className="stat-card">
               <h3 className="stat-label">Active Campaigns</h3>
-              <p className="stat-value">{activeCampaigns}</p>
+              <p className="stat-value">{activeCampaigns.length}</p>
             </div>
             <div className="stat-card">
-              <h3 className="stat-label">Pending Units</h3>
-              <p className="stat-value">12</p>
+              <h3 className="stat-label">Published Content</h3>
+              <p className="stat-value">{contentByStatus.published}</p>
+            </div>
+          </div>
+          
+          {/* Financial Metrics Row */}
+          <div className="stats-grid mt-6">
+            <div className="stat-card bg-gradient-to-br from-cobalt/10 to-primary/10">
+              <h3 className="stat-label">Total Budget</h3>
+              <p className="stat-value">${totalBudget.toLocaleString()}</p>
+            </div>
+            <div className="stat-card bg-gradient-to-br from-cobalt/10 to-primary/10">
+              <h3 className="stat-label">Total Spent</h3>
+              <p className="stat-value">${totalSpent.toLocaleString()}</p>
+            </div>
+            <div className="stat-card bg-gradient-to-br from-green-500/10 to-emerald-500/10">
+              <h3 className="stat-label">Conversions</h3>
+              <p className="stat-value">{totalConversions}</p>
+            </div>
+            <div className="stat-card bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+              <h3 className="stat-label">Budget Used</h3>
+              <p className="stat-value">{totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0}%</p>
             </div>
           </div>
         </section>
       )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+        {/* Lead Funnel */}
+        <section>
+          <h2 className="text-[10px] font-bold text-text-primary mb-6 uppercase tracking-[0.15em] border-l-2 border-primary pl-3">Lead Pipeline</h2>
+          <div className="table-container">
+            <div className="space-y-3">
+              {Object.entries(leadsByStage).map(([stage, count]) => (
+                <div key={stage} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                  <span className="text-xs uppercase tracking-wider text-text-secondary">{stage}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-full" 
+                        style={{ width: `${leads.length > 0 ? (count / leads.length) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <span className="mono text-sm font-bold">{count}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Content Pipeline */}
+        <section>
+          <h2 className="text-[10px] font-bold text-text-primary mb-6 uppercase tracking-[0.15em] border-l-2 border-primary pl-3">Content Pipeline</h2>
+          <div className="table-container">
+            <div className="space-y-3">
+              {Object.entries(contentByStatus).map(([status, count]) => (
+                <div key={status} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                  <span className="text-xs uppercase tracking-wider text-text-secondary">{status}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${
+                          status === 'published' ? 'bg-green-500' : 
+                          status === 'approved' ? 'bg-blue-500' : 
+                          status === 'review' ? 'bg-yellow-500' : 'bg-gray-500'
+                        }`}
+                        style={{ width: `${contents.length > 0 ? (count / contents.length) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <span className="mono text-sm font-bold">{count}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         {/* Recent Clients */}
