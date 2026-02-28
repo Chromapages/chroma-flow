@@ -22,3 +22,6 @@ dist/
 # IDE
 .idea/
 .vscode/
+service-account.json
+render.yaml
+package-api.json
